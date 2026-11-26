@@ -135,11 +135,20 @@ python Digits2Fa.py . --mode component --suffix=-FD -r --collect-folder "FD(Fars
 
 Each launcher also contains commented examples for a single font, another folder and another file. Edit them to change the mode, suffix, folder name or to add `--arabic`.
 
-On macOS run `chmod +x Digits2Fa.command` (or `Digits2Fa.sh`) once. Files downloaded from the internet get a quarantine flag, so macOS may refuse to open them; either right‑click → Open, or run:
+### macOS troubleshooting
 
-```bash
-xattr -d com.apple.quarantine Digits2Fa.command
-```
+- **"could not be executed because you do not have appropriate access privileges":** the file has no execute permission (this happens when a file is downloaded on its own, e.g. via "Raw" or "Save as"). Open Terminal in the folder and run, once:
+
+  ```bash
+  chmod +x Digits2Fa.command Digits2Fa.sh
+  ```
+
+  Or run it without changing anything: `bash Digits2Fa.command`.
+- **"Apple could not verify ... is free of malware":** files from the internet carry a quarantine flag. Right‑click → Open, go to System Settings → Privacy & Security → Open Anyway, or run:
+
+  ```bash
+  xattr -d com.apple.quarantine Digits2Fa.command Digits2Fa.sh
+  ```
 
 ## How it works
 
