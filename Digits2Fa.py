@@ -60,24 +60,39 @@ read as an option.  A suffix without a dash (--suffix FD) works too.
     python Digits2Fa.py Font.ttf -m copy -s=-FD --keep-ttx
 
   A folder (every .ttf .otf .woff .woff2 in it; -r also searches sub-folders;
-  with -o the output folder keeps the sub-folder structure)
-    python Digits2Fa.py ./fonts --mode component --suffix=-FD
-    python Digits2Fa.py ./fonts --mode copy --suffix=-FD -r
-    python Digits2Fa.py ./fonts --mode component --suffix=-FD --arabic -r -o ./out
-    python Digits2Fa.py ./fonts --cmap --suffix=-FD -o ./out   (folder, cmap)
-    python Digits2Fa.py ./fonts --cmap --suffix=-FD --arabic -r
+  --collect is required, see below; with -o the output folder keeps the
+  sub-folder structure)
+    python Digits2Fa.py ./fonts --mode component --suffix=-FD --collect none
+    python Digits2Fa.py ./fonts --mode copy --suffix=-FD -r --collect none
+    python Digits2Fa.py ./fonts --mode component --suffix=-FD --arabic -r --collect none -o ./out
+    python Digits2Fa.py ./fonts --cmap --suffix=-FD --collect none -o ./out
+    python Digits2Fa.py ./fonts --cmap --suffix=-FD --arabic -r --collect none
 
-Gather the results (folder input)
-    --collect-folder NAME: if more than one font is converted, all results
-    are put together in a folder called NAME (inside the input folder, or
-    inside --output if given).  There is no default name; if two fonts would
-    get the same file name, the sub-folder structure is kept inside NAME.
-    That folder is not searched again on the next run.
-    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect-folder "FD(Farsi Digits)"
+Where the results go (folder input; --collect is required, there is no default)
+    --collect none         results are written next to the originals
+    --collect per-folder   next to the originals too, but in every folder where
+                           more than one font is converted the results are put
+                           in a sub-folder (named by --collect-folder) of that
+                           same folder; a single font gets its result right
+                           beside it.  The folder structure of a font package
+                           is not disturbed.
+    --collect single       all results of the run are put together in ONE folder
+                           (named by --collect-folder) in the input folder, if
+                           more than one font is converted.  If two fonts would
+                           get the same file name, the sub-folder structure is
+                           kept inside that folder.
+    --collect-folder NAME  required for per-folder and single, not allowed with
+                           none.  No default name.  These folders are not
+                           searched again on the next run.  With --output the
+                           same structure is created inside the output folder.
+    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
+    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect single --collect-folder "FD(Farsi Digits)"
+    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect none
 
 Rules: --suffix is always required (the new font must not share the name of
 the old one); --mode is required unless --cmap is given; --mode and --cmap
-cannot be combined; the input is never overwritten.
+cannot be combined; --collect is required for a folder input; the input is
+never overwritten.
 
 Requires: fontTools  (pip install fonttools; add brotli for woff2)
 """
@@ -850,18 +865,21 @@ def _norm(path):
     return os.path.normcase(os.path.abspath(path))
 
 
-def collect_fonts(folder, recursive, exclude=()):
+def collect_fonts(folder, recursive, exclude=(), exclude_names=()):
     """Fonts in `folder` (and its sub-folders with recursive=True), without
-    descending into the folders listed in `exclude`."""
+    descending into the folders listed in `exclude` or into any folder whose
+    name is in `exclude_names` (the result folders of an earlier run)."""
     found, skipped = [], []
     exclude = {_norm(e) for e in exclude}
+    exclude_names = {os.path.normcase(n) for n in exclude_names}
     if recursive:
         walker = os.walk(folder)
     else:
         walker = [(folder, [], sorted(os.listdir(folder)))]
     for dirpath, dirnames, filenames in walker:
         dirnames[:] = sorted(d for d in dirnames
-                             if _norm(os.path.join(dirpath, d)) not in exclude)
+                             if _norm(os.path.join(dirpath, d)) not in exclude
+                             and os.path.normcase(d) not in exclude_names)
         for fn in sorted(filenames):
             full = os.path.join(dirpath, fn)
             ext = os.path.splitext(fn)[1].lower()
@@ -893,10 +911,15 @@ def main():
                          "default: next to the input")
     ap.add_argument("-r", "--recursive", action="store_true",
                     help="folder input: also search sub-folders")
+    ap.add_argument("--collect", choices=("per-folder", "single", "none"),
+                    help="folder input (required, no default): where the results go. "
+                         "per-folder = in every folder with more than one font, into a "
+                         "sub-folder next to the originals (the folder structure stays); "
+                         "single = all results of the run together in one folder; "
+                         "none = next to the originals, no extra folder")
     ap.add_argument("--collect-folder", metavar="NAME",
-                    help="folder input: if more than one font is converted, gather all "
-                         "results in a folder with this name (inside the input folder, or "
-                         "inside --output if given). No default.")
+                    help="name of the folder used by --collect per-folder / single "
+                         "(required for those two, no default)")
     ap.add_argument("--keep-ttx", action="store_true",
                     help="keep the modified .ttx next to the output font")
     ap.add_argument("--arabic", action="store_true",
@@ -928,11 +951,25 @@ def main():
     # ---- folder mode ---------------------------------------------------------
     if args.output and os.path.splitext(args.output)[1].lower() in FONT_EXTS + (".ttx",):
         sys.exit("For a folder input, --output must be a folder, not a file.")
+    # ---- folder mode: --collect decides where the results go ---------------------
+    mode = args.collect
+    if not mode:
+        ap.error("--collect per-folder|single|none is required for a folder input")
+    if mode == "none" and args.collect_folder:
+        ap.error("--collect-folder cannot be used with --collect none")
+    if mode != "none" and not args.collect_folder:
+        ap.error("--collect %s needs --collect-folder NAME" % mode)
+    name = args.collect_folder
+
     core = args.suffix.lstrip("-_ ")
     out_root = os.path.abspath(args.output) if args.output else path
-    collect_dir = os.path.join(out_root, args.collect_folder) if args.collect_folder else None
-    exclude = [d for d in (collect_dir, os.path.abspath(args.output) if args.output else None) if d]
-    fonts, unsupported = collect_fonts(path, args.recursive, exclude)
+    exclude = [os.path.abspath(args.output)] if args.output else []
+    exclude_names = []
+    if mode == "per-folder":
+        exclude_names.append(name)
+    elif mode == "single":
+        exclude.append(os.path.join(out_root, name))
+    fonts, unsupported = collect_fonts(path, args.recursive, exclude, exclude_names)
     for u in unsupported:
         print("Skipped (font collections are not supported): %s" % u)
 
@@ -945,26 +982,38 @@ def main():
         else:
             todo.append(f)
 
-    # more than one font -> gather the results in the collect folder
-    collect, flat = bool(collect_dir) and len(todo) > 1, True
-    if collect:
+    per_dir = {}
+    for f in todo:
+        per_dir.setdefault(os.path.dirname(f), []).append(f)
+    collected = []
+
+    # single: one folder for the whole run (only if more than one font)
+    single_dir, flat = None, True
+    if mode == "single" and len(todo) > 1:
+        single_dir = os.path.join(out_root, name)
         names = [(insert_suffix(os.path.splitext(os.path.basename(f))[0], args.suffix)
                   + os.path.splitext(f)[1]).lower() for f in todo]
         flat = len(set(names)) == len(names)
-        print("Collecting %d fonts into: %s" % (len(todo), collect_dir))
+        collected.append(single_dir)
+        print("Collecting %d fonts into: %s" % (len(todo), single_dir))
         if not flat:
             print("  note: some fonts would get the same file name; the sub-folder "
                   "structure is kept inside the collect folder.")
 
     done, failed = [], []
     for f in todo:
-        rel_dir = os.path.relpath(os.path.dirname(f), path)
-        if collect:
-            out_dir = collect_dir if flat else os.path.normpath(os.path.join(collect_dir, rel_dir))
-        elif args.output:
-            out_dir = os.path.normpath(os.path.join(out_root, rel_dir))
+        d = os.path.dirname(f)
+        rel_dir = os.path.relpath(d, path)
+        base = os.path.normpath(os.path.join(out_root, rel_dir)) if args.output else None
+        if mode == "per-folder" and len(per_dir[d]) > 1:
+            out_dir = os.path.join(base or d, name)
+            if out_dir not in collected:
+                collected.append(out_dir)
+                print("Collecting %d fonts of %s into: %s" % (len(per_dir[d]), d, out_dir))
+        elif single_dir:
+            out_dir = single_dir if flat else os.path.normpath(os.path.join(single_dir, rel_dir))
         else:
-            out_dir = None
+            out_dir = base
         print("\n=== %s ===" % os.path.relpath(f, path))
         try:
             convert_font(f, args, out_dir=out_dir)
@@ -976,8 +1025,8 @@ def main():
           (len(done), len(failed), len(skipped)))
     for f in failed:
         print("  failed:", f)
-    if collect and done:
-        print("Results are in: %s" % collect_dir)
+    for c in collected:
+        print("Results folder: %s" % c)
     if not fonts:
         print("No font files found in %s%s." % (path, "" if args.recursive
               else " (use --recursive to search sub-folders)"))

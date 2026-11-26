@@ -3,8 +3,10 @@
 # Put this file and Digits2Fa.py in the folder that contains your fonts
 # (the fonts may also be in sub-folders), then double-click this file.
 # First time only:  chmod +x Digits2Fa.command
-# (If macOS blocks it: right-click > Open, or run
-#  xattr -d com.apple.quarantine Digits2Fa.command)
+# If macOS blocks it ("Apple could not verify ..."): open System Settings >
+# Privacy & Security, scroll down and click "Open Anyway" (it appears after the
+# first blocked attempt). Or right-click > Open, or run
+#  xattr -d com.apple.quarantine Digits2Fa.command
 # Needs Python 3. The dependencies (fonttools, brotli) are checked on every run
 # and installed if they are missing (see requirements.txt).
 
@@ -41,18 +43,22 @@ fi
 #   .                       this folder (searched together with its sub-folders: -r)
 #   --mode component        or: copy   (or use --cmap instead of --mode)
 #   --suffix=-FD            suffix added to the font names (always required)
-#   --collect-folder NAME   if more than one font is found, all results are
-#                           gathered in a folder with this name (change it freely)
+#   --collect per-folder  where the results go (required for a folder):
+#                           per-folder = in every folder with more than one font,
+#                                        into a sub-folder next to the originals
+#                           single     = all results together in ONE folder
+#                           none       = just next to the originals
+#   --collect-folder NAME   name of that folder (change it freely; not used with none)
 #   add --arabic to also convert the Arabic-Indic digits
 if [ "$DEPS_OK" = 1 ]; then
-    python3 Digits2Fa.py . --mode component --suffix=-FD -r --collect-folder "FD(Farsi Digits)"
+    python3 Digits2Fa.py . --mode component --suffix=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
 fi
 
 # ---- Only one font (commented example) --------------------------------------
 # python3 Digits2Fa.py "Font.ttf" --mode component --suffix=-FD
 
 # ---- Another folder or file (commented example) ------------------------------
-# python3 Digits2Fa.py "/Users/me/Fonts" --mode component --suffix=-FD --arabic -r --collect-folder "FD(Farsi Digits)"
+# python3 Digits2Fa.py "/Users/me/Fonts" --mode component --suffix=-FD --arabic -r --collect per-folder --collect-folder "FD(Farsi Digits)"
 # python3 Digits2Fa.py "/Users/me/Fonts/Font.ttf" --mode component --suffix=-FD -o "/Users/me/Fonts/out/Font-FD.ttf"
 
 # Keep the Terminal window open until a key is pressed
