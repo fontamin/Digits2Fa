@@ -23,13 +23,15 @@ The new font is always renamed with a suffix you choose, so it never has the sam
 
 ## Requirements
 
-- Python 3.8+
+- Python 3 (3.9 or newer recommended; developed and tested with fontTools 4.67.0 on Python 3.12)
 - [fontTools](https://github.com/fonttools/fonttools)
+- [brotli](https://pypi.org/project/Brotli/), needed for `.woff2` fonts (the launchers always install it)
 
 ```bash
-pip install fonttools
-pip install brotli      # only needed for .woff2
+pip install -r requirements.txt
 ```
+
+The launcher scripts (see below) check these dependencies on every run and install only what is missing; installed packages are never upgraded.
 
 ## Quick start
 
@@ -123,6 +125,7 @@ python Digits2Fa.py . --mode component --suffix=-FD -r --collect-folder "FD(Fars
 - The suffix is `-FD`.
 - If more than one font is found, all results are gathered in a folder called `FD(Farsi Digits)`. The folder name is only an argument in the launcher; change it there if you like. The Python script itself has no default for it.
 - With a single font the result is written next to it.
+- Before converting, the launcher checks whether `fonttools` and `brotli` are installed and installs only the missing ones with `pip install` (no upgrade). Both are required: if either can't be installed, nothing is converted and a message tells you how to install it yourself.
 
 | File | System |
 |---|---|
@@ -160,6 +163,8 @@ xattr -d com.apple.quarantine Digits2Fa.command
 - The launchers (`.bat`, `.command`, `.sh`) now convert every font in their folder and all sub-folders by default, with suffix `-FD`.
 - New `--collect-folder NAME` argument: with more than one font, all results are gathered in one folder (the launchers use `FD(Farsi Digits)`).
 - New `--version` argument.
+- The launchers check the dependencies (`fonttools`, `brotli`) first and install only the missing ones; nothing is upgraded. Both are required.
+- Added `requirements.txt`.
 
 **1.0**
 - First release: component, copy and cmap methods, folder conversion, launchers.

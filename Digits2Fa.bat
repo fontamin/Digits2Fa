@@ -2,11 +2,47 @@
 REM Digits2Fa 1.1 - Windows launcher
 REM Put this file and Digits2Fa.py in the folder that contains your fonts
 REM (the fonts may also be in sub-folders), then double-click this file.
-REM Needs: Python 3  and  pip install fonttools brotli
-REM (If "python" is not found, replace it with "py -3" below.)
+REM Needs Python 3. The dependencies (fonttools, brotli) are checked on every run
+REM and installed if they are missing (see requirements.txt).
+REM (If "python" is not found, replace it with "py -3" everywhere below.)
 
 REM Always work from the folder this file lives in
 cd /d "%~dp0"
+
+REM ---- Check dependencies: installs only what is missing, never upgrades ----
+where python >nul 2>&1
+if errorlevel 1 (
+    echo Python 3 was not found. Please install it from https://www.python.org/downloads/
+    echo and tick "Add python.exe to PATH" in the installer.
+    pause
+    exit /b 1
+)
+
+python -c "import fontTools" >nul 2>&1
+if errorlevel 1 (
+    echo fonttools is missing - installing it ...
+    python -m pip install fonttools
+    python -c "import fontTools" >nul 2>&1
+    if errorlevel 1 (
+        echo fonttools could not be installed automatically.
+        echo Please install it yourself:  pip install fonttools
+        pause
+        exit /b 1
+    )
+)
+
+python -c "import brotli" >nul 2>&1
+if errorlevel 1 (
+    echo brotli is missing - installing it ...
+    python -m pip install brotli
+    python -c "import brotli" >nul 2>&1
+    if errorlevel 1 (
+        echo brotli could not be installed automatically.
+        echo Please install it yourself:  pip install brotli
+        pause
+        exit /b 1
+    )
+)
 
 REM ---- Default: convert EVERY font in this folder and in all its sub-folders --
 REM   .                       this folder (searched together with its sub-folders: -r)

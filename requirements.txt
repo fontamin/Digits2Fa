@@ -1,0 +1,7 @@
+# Digits2Fa dependencies  (install with:  pip install -r requirements.txt)
+
+# Reads, edits and compiles the fonts
+fonttools
+
+# Needed for .woff / .woff2 fonts (the launchers always install it)
+brotli

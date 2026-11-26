@@ -5,10 +5,37 @@
 # First time only:  chmod +x Digits2Fa.command
 # (If macOS blocks it: right-click > Open, or run
 #  xattr -d com.apple.quarantine Digits2Fa.command)
-# Needs:  python3  and  pip3 install fonttools brotli
+# Needs Python 3. The dependencies (fonttools, brotli) are checked on every run
+# and installed if they are missing (see requirements.txt).
 
 # Always work from the folder this script lives in
 cd "$(dirname "$0")" || exit 1
+
+# ---- Check dependencies: installs only what is missing, never upgrades ------
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "Python 3 was not found. Please install it from https://www.python.org/downloads/"
+    DEPS_OK=0
+else
+    DEPS_OK=1
+    if ! python3 -c "import fontTools" >/dev/null 2>&1; then
+        echo "fonttools is missing - installing it ..."
+        python3 -m pip install fonttools || python3 -m pip install --user fonttools
+        if ! python3 -c "import fontTools" >/dev/null 2>&1; then
+            echo "fonttools could not be installed automatically."
+            echo "Please install it yourself:  pip3 install fonttools"
+            DEPS_OK=0
+        fi
+    fi
+    if ! python3 -c "import brotli" >/dev/null 2>&1; then
+        echo "brotli is missing - installing it ..."
+        python3 -m pip install brotli || python3 -m pip install --user brotli
+        if ! python3 -c "import brotli" >/dev/null 2>&1; then
+            echo "brotli could not be installed automatically."
+            echo "Please install it yourself:  pip3 install brotli"
+            DEPS_OK=0
+        fi
+    fi
+fi
 
 # ---- Default: convert EVERY font in this folder and in all its sub-folders --
 #   .                       this folder (searched together with its sub-folders: -r)
@@ -17,7 +44,9 @@ cd "$(dirname "$0")" || exit 1
 #   --collect-folder NAME   if more than one font is found, all results are
 #                           gathered in a folder with this name (change it freely)
 #   add --arabic to also convert the Arabic-Indic digits
-python3 Digits2Fa.py . --mode component --suffix=-FD -r --collect-folder "FD(Farsi Digits)"
+if [ "$DEPS_OK" = 1 ]; then
+    python3 Digits2Fa.py . --mode component --suffix=-FD -r --collect-folder "FD(Farsi Digits)"
+fi
 
 # ---- Only one font (commented example) --------------------------------------
 # python3 Digits2Fa.py "Font.ttf" --mode component --suffix=-FD
