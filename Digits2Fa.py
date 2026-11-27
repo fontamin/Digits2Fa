@@ -1,44 +1,53 @@
 #!/usr/bin/env python3
-"""
-Digits2Fa 1.1 - give a font Persian digits where the Latin digits (0-9) are.
+r"""
+Digits2Fa 1.1 - give a font Farsi digits where the Latin digits (0-9) are.
 
-The Latin digits (U+0030..0039) are made to look like the Persian digits
+The Latin digits (U+0030..0039) are made to look like the Farsi digits
 (U+06F0..06F9).  With --arabic the Arabic-Indic digits (U+0660..0669) get the
-Persian shapes as well (all ten, since their shapes may differ).  A Persian
+Farsi shapes as well (all ten, since their shapes may differ).  A Farsi
 digit that is already just a component of the target digit has the same shape
-and is skipped.  Goal: variants with Persian digits for places where the
+and is skipped.  Goal: variants with Farsi digits for places where the
 Latin digits cannot be changed.
 
 Three methods
 -------------
 --mode component   (default choice for TrueType)
-    The Latin glyph becomes a component of the Persian glyph: no duplicated
+    The Latin glyph becomes a component of the Farsi glyph: no duplicated
     outlines, smaller file.
-      * If the Persian glyph is itself a composite, its components are reused;
+      * If the Farsi glyph is itself a composite, its components are reused;
         nested composites are flattened down to outline glyphs, so there are
         no composites inside composites.
       * USE_MY_METRICS is set on the component and hmtx (width / lsb) is
         copied too, so the advance is right in every case.
       * Variable fonts: the gvar entry of the Latin glyph is converted.
-      * sbix bitmaps: the Latin glyph becomes a "dupe" of the Persian bitmap.
+      * sbix bitmaps: the Latin glyph becomes a "dupe" of the Farsi bitmap.
       * Fonts with colour tables (COLR / SVG / CBDT / EBDT) and CFF/CFF2 fonts
         (no components there) automatically use a full copy.
 --mode copy
     Everything is duplicated onto the Latin glyph: outlines (glyf / CFF /
     CFF2), hmtx / vmtx, HVAR / VVAR, gvar, COLR v0/v1 (+ ClipList), sbix.
 --cmap
-    The cmap entries of the digits are pointed straight at the Persian
+    The cmap entries of the digits are pointed straight at the Farsi
     glyphs.  Nothing else is changed (the old digit glyphs just stay unused,
     so the file does not get smaller).  --mode is not used.  Not elegant,
     but sometimes the best choice.
 
-In 'component' and 'copy' modes kerning is handled as well: if the Persian
+In 'component' and 'copy' modes kerning is handled as well: if the Farsi
 digits have kerning (GPOS PairPos format 1 & 2, legacy 'kern') it is copied to
 the target digits, otherwise the target digits' kerning is removed.
 
-Workflow: font -> TTX (XML) -> edit -> compile back.  Names are find&replaced
-so that the result carries your suffix (family / full / PostScript / unique-ID
-names, CFF names):  Font -> Font FD,  Font-Regular -> Font-FD-Regular.
+Workflow: font -> TTX (XML) -> edit -> compile back.
+
+Names: the suffix is inserted after the FAMILY name and before the style
+(weight) name, which is never changed.  The family is taken from the name table
+(ID 16, else ID 1), not from the position of a hyphen.  With --suffix=-FD:
+    family       AzarMehr-DS2             ->  AzarMehr-DS2-FD
+    full name    AzarMehr-DS2 ExtraBlack  ->  AzarMehr-DS2-FD ExtraBlack
+    PostScript   AzarMehr-DS2ExtraBlack   ->  AzarMehr-DS2-FD-ExtraBlack
+    unique ID    ...;AzarMehr-DS2ExtraBlack  ->  ...;AzarMehr-DS2-FD-ExtraBlack
+    file name    the new PostScript name:  AzarMehr-DS2-FD-ExtraBlack.ttf
+In display names (family, full name) the suffix is used as typed: -FD gives
+"-FD", --suffix=" FD" (or FD) gives " FD".  PostScript names always get "-FD".
 
 Examples (imaginary Font.ttf)
 -----------------------------
@@ -46,27 +55,79 @@ Write the suffix as --suffix=-FD (with '='), otherwise a leading dash may be
 read as an option.  A suffix without a dash (--suffix FD) works too.
 
   Single file, Latin digits only
-    python Digits2Fa.py Font.ttf --mode component --suffix=-FD
-    python Digits2Fa.py Font.ttf --mode copy      --suffix=-FD
-    python Digits2Fa.py Font.ttf --cmap --suffix=-FD
+    python Digits2Fa.py Font.ttf \
+        --mode component \
+        --suffix=-FD
+
+    python Digits2Fa.py Font.ttf \
+        --mode copy \
+        --suffix=-FD
+
+    python Digits2Fa.py Font.ttf \
+        --cmap \
+        --suffix=-FD
 
   Single file, Latin + Arabic-Indic digits
-    python Digits2Fa.py Font.ttf --mode component --suffix=-FD --arabic
-    python Digits2Fa.py Font.ttf --mode copy      --suffix=-FD --arabic
-    python Digits2Fa.py Font.ttf --cmap --suffix=-FD --arabic
+    python Digits2Fa.py Font.ttf \
+        --mode component \
+        --suffix=-FD \
+        --arabic
+
+    python Digits2Fa.py Font.ttf \
+        --mode copy \
+        --suffix=-FD \
+        --arabic
+
+    python Digits2Fa.py Font.ttf \
+        --cmap \
+        --suffix=-FD \
+        --arabic
 
   Output path / keep the intermediate TTX
-    python Digits2Fa.py Font.ttf -m component -s=-FD -o out/Font-FD.ttf
-    python Digits2Fa.py Font.ttf -m copy -s=-FD --keep-ttx
+    python Digits2Fa.py Font.ttf \
+        -m component \
+        -s=-FD \
+        -o out/Font-FD.ttf
+
+    python Digits2Fa.py Font.ttf \
+        -m copy \
+        -s=-FD \
+        --keep-ttx
 
   A folder (every .ttf .otf .woff .woff2 in it; -r also searches sub-folders;
   --collect is required, see below; with -o the output folder keeps the
   sub-folder structure)
-    python Digits2Fa.py ./fonts --mode component --suffix=-FD --collect none
-    python Digits2Fa.py ./fonts --mode copy --suffix=-FD -r --collect none
-    python Digits2Fa.py ./fonts --mode component --suffix=-FD --arabic -r --collect none -o ./out
-    python Digits2Fa.py ./fonts --cmap --suffix=-FD --collect none -o ./out
-    python Digits2Fa.py ./fonts --cmap --suffix=-FD --arabic -r --collect none
+    python Digits2Fa.py ./fonts \
+        --mode component \
+        --suffix=-FD \
+        --collect none
+
+    python Digits2Fa.py ./fonts \
+        --mode copy \
+        --suffix=-FD \
+        -r \
+        --collect none
+
+    python Digits2Fa.py ./fonts \
+        --mode component \
+        --suffix=-FD \
+        --arabic \
+        -r \
+        --collect none \
+        -o ./out
+
+    python Digits2Fa.py ./fonts \
+        --cmap \
+        --suffix=-FD \
+        --collect none \
+        -o ./out
+
+    python Digits2Fa.py ./fonts \
+        --cmap \
+        --suffix=-FD \
+        --arabic \
+        -r \
+        --collect none
 
 Where the results go (folder input; --collect is required, there is no default)
     --collect none         results are written next to the originals
@@ -85,9 +146,25 @@ Where the results go (folder input; --collect is required, there is no default)
                            none.  No default name.  These folders are not
                            searched again on the next run.  With --output the
                            same structure is created inside the output folder.
-    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
-    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect single --collect-folder "FD(Farsi Digits)"
-    python Digits2Fa.py ./fonts -m component -s=-FD -r --collect none
+    python Digits2Fa.py ./fonts \
+        -m component \
+        -s=-FD \
+        -r \
+        --collect per-folder \
+        --collect-folder "FD(Farsi Digits)"
+
+    python Digits2Fa.py ./fonts \
+        -m component \
+        -s=-FD \
+        -r \
+        --collect single \
+        --collect-folder "FD(Farsi Digits)"
+
+    python Digits2Fa.py ./fonts \
+        -m component \
+        -s=-FD \
+        -r \
+        --collect none
 
 Rules: --suffix is always required (the new font must not share the name of
 the old one); --mode is required unless --cmap is given; --mode and --cmap
@@ -111,7 +188,7 @@ from fontTools.ttLib import TTFont
 __version__ = "1.1"
 
 LATIN_BASE = 0x0030      # U+0030..U+0039
-PERSIAN_BASE = 0x06F0    # U+06F0..U+06F9
+FARSI_BASE = 0x06F0    # U+06F0..U+06F9
 ARABIC_BASE = 0x0660     # U+0660..U+0669 (Arabic-Indic), only with --arabic
 USE_MY_METRICS = 0x0200
 ROUND_XY_TO_GRID = 0x0004
@@ -119,7 +196,7 @@ COLOR_TABLES = ("COLR", "SVG", "CBDT", "CBLC", "EBDT", "EBLC")
 BIG = 10 ** 9
 
 # ----------------------------------------------------------------------------
-# Per-glyph data in TTX that has to be copied from the Persian glyph to the
+# Per-glyph data in TTX that has to be copied from the Farsi glyph to the
 # Latin glyph.   (entry tag, attribute holding glyph name, child holding name)
 # ----------------------------------------------------------------------------
 Spec = namedtuple("Spec", "tag attr child sort")
@@ -203,7 +280,7 @@ def resort(parent, spec, order):
 
 
 def sync_entries(table, spec, dst_to_src, order):
-    """Make the entry of every Latin glyph (dst) a copy of the Persian one."""
+    """Make the entry of every Latin glyph (dst) a copy of the Farsi one."""
     count = 0
     parents = [p for p in table.iter() if any(c.tag == spec.tag for c in p)]
     for parent in parents:
@@ -229,7 +306,7 @@ def sync_entries(table, spec, dst_to_src, order):
                         new.set("index", d.get("index"))
                     parent[pos] = new
                 else:
-                    parent.remove(d)       # Persian glyph has none -> drop it
+                    parent.remove(d)       # Farsi glyph has none -> drop it
             else:
                 parent.append(new)
             touched = True
@@ -301,7 +378,7 @@ def flatten_components(glyphs, name, seen=()):
 
 
 def build_component_glyphs(glyf, dst_to_src, has_gvar):
-    """Replace each Latin digit glyph with a component reference to the Persian
+    """Replace each Latin digit glyph with a component reference to the Farsi
     glyph (or a copy of its components).  Returns (stats, {dst: n_points})
     where the dict lists the glyphs that became a composite of a simple glyph
     (needed to convert their gvar data)."""
@@ -355,7 +432,7 @@ def build_component_glyphs(glyf, dst_to_src, has_gvar):
 def gvar_for_components(gvar, simple_points):
     """Latin glyph is now a 1-component composite: point indexes of the 4
     phantom points move from N..N+3 to 1..4; outline-point deltas are dropped
-    (they live in the Persian glyph)."""
+    (they live in the Farsi glyph)."""
     for el in list(gvar.findall("glyphVariations")):
         n = simple_points.get(el.get("glyph"))
         if n is None:
@@ -374,7 +451,7 @@ def gvar_for_components(gvar, simple_points):
 
 
 def process_sbix(sbix, dst_to_src):
-    """Latin glyph = 'dupe' (reference) of the Persian glyph's bitmap."""
+    """Latin glyph = 'dupe' (reference) of the Farsi glyph's bitmap."""
     n = 0
     for strike in sbix.iter("strike"):
         ents = {g.get("name"): g for g in strike.findall("glyph")}
@@ -431,7 +508,7 @@ def uses_glyph(glyphs, name, target, seen=()):
 
 
 def process_clips(colr, dst_to_src, src_to_dsts):
-    """COLRv1 ClipList: make Latin glyphs share the Persian glyph's clip box."""
+    """COLRv1 ClipList: make Latin glyphs share the Farsi glyph's clip box."""
     for clip in list(colr.iter("Clip")):
         for g in clip.findall("Glyph"):
             if g.get("value") in dst_to_src:
@@ -457,7 +534,7 @@ def _pairpos_format1(pp, cov, dst_to_src, src_to_dsts, order):
     entries = dict(zip(glyphs, psets))
     had |= any(s in entries for s in src_to_dsts)
 
-    # (1) as SECOND glyph: drop Latin digits, duplicate Persian digits' records
+    # (1) as SECOND glyph: drop Latin digits, duplicate Farsi digits' records
     for ps in psets:
         recs = ps.findall("PairValueRecord")
         for r in recs:
@@ -478,7 +555,7 @@ def _pairpos_format1(pp, cov, dst_to_src, src_to_dsts, order):
             r.set("index", str(n))
             ps.append(r)
 
-    # (2) as FIRST glyph: Latin digit gets a copy of the Persian digit's PairSet
+    # (2) as FIRST glyph: Latin digit gets a copy of the Farsi digit's PairSet
     final = {g: ps for g, ps in entries.items() if g not in dst_to_src}
     for d, s in dst_to_src.items():
         if s in entries:
@@ -574,56 +651,164 @@ def set_text(el, new):
 
 
 def insert_suffix(value, suffix):
-    """Insert the suffix after the family part:  Font-Regular -> Font-FD-Regular"""
-    fam, _, style = value.partition("-")
-    return fam + "-" + suffix.lstrip("-_ ") + ("-" + style if style else "")
+    """Fallback for file names: put the suffix before the last hyphen part
+    (the style):  Font-DS2-Regular -> Font-DS2-FD-Regular"""
+    core = re.sub(r"\s+", "", suffix.strip().lstrip("-_ "))
+    fam, sep, style = value.rpartition("-")
+    if not sep:
+        return value + "-" + core
+    return fam + "-" + core + "-" + style
+
+
+def _key(s):
+    """Compare names ignoring case, spaces, hyphens and underscores."""
+    return re.sub(r"[\s\-_]+", "", s).lower()
+
+
+def split_family(value, family, glued_ok=False):
+    """If `value` starts with `family` (ignoring case, spaces, hyphens and
+    underscores) return (prefix, rest), else None.  The rest has to start with a
+    separator (or be empty) unless glued_ok - PostScript names such as
+    AzarMehr-DS2ExtraBlack have the style glued to the family."""
+    target = _key(family)
+    if not target:
+        return None
+    got, i = "", 0
+    while i < len(value) and len(got) < len(target):
+        if not re.match(r"[\s\-_]", value[i]):
+            got += value[i].lower()
+        i += 1
+    if got != target:
+        return None
+    rest = value[i:]
+    if rest and not glued_ok and not re.match(r"[\s\-_]", rest[0]):
+        return None
+    return value[:i], rest
+
+
+def _strip_tail(value, tail):
+    """Remove the style `tail` from the end of `value` (ignoring separators)."""
+    n, i = len(_key(tail)), len(value)
+    while i > 0 and n > 0:
+        i -= 1
+        if not re.match(r"[\s\-_]", value[i]):
+            n -= 1
+    return value[:i].rstrip(" -_")
+
+
+class NamePlan:
+    """How the names of a font change.  The suffix goes after the FAMILY name,
+    before the style (weight) name, which is never touched:
+
+        family     AzarMehr-DS2            ->  AzarMehr-DS2-FD
+        full name  AzarMehr-DS2 ExtraBlack ->  AzarMehr-DS2-FD ExtraBlack
+        PostScript AzarMehr-DS2ExtraBlack  ->  AzarMehr-DS2-FD-ExtraBlack
+
+    The family comes from the name table (ID 16, else ID 1), not from the
+    position of a hyphen.  In display names the suffix is used as typed
+    (--suffix=-FD -> "-FD"; a suffix that does not start with - _ or a space
+    gets a space in front); PostScript names always get "-FD"."""
+
+    def __init__(self, names, suffix):
+        s = suffix.rstrip()
+        self.core = s.lstrip("-_ \t").strip()
+        if not self.core:
+            sys.exit("Suffix must not be empty.")
+        self.ps_core = re.sub(r"\s+", "", self.core)
+        self.display = s if s[:1] in ("-", "_", " ") else " " + s
+        self.warnings = []
+
+        def g(i):
+            return (names.get(i) or "").strip() or None
+
+        self.fam_old = g(16) or g(1)
+        self.ps_old = g(6)
+        self.styles = [x for x in (g(17),) if x]
+        # no ID 16: ID 1 may contain the style ("Font Light") - take it off
+        if not g(16) and self.fam_old and self.ps_old and "-" in self.ps_old:
+            hint = self.ps_old.rpartition("-")[2]
+            if (_key(hint) not in ("regular", "bold", "italic", "bolditalic")
+                    and _key(self.fam_old).endswith(_key(hint))):
+                self.fam_old = _strip_tail(self.fam_old, hint)
+        self.fam_new = self.fam_old + self.display if self.fam_old else None
+
+        self.fam_ps, self.style_ps, self.ps_new = None, "", None
+        if self.ps_old:
+            m = split_family(self.ps_old, self.fam_old, glued_ok=True) if self.fam_old else None
+            if m:
+                self.fam_ps, rest = m[0].rstrip("-_ "), m[1].lstrip("-_ ")
+            elif "-" in self.ps_old:
+                self.fam_ps, _, rest = self.ps_old.rpartition("-")
+            else:
+                self.fam_ps, rest = self.ps_old, ""
+            self.style_ps = rest
+            self.ps_new = self.fam_ps + "-" + self.ps_core + ("-" + rest if rest else "")
+
+    def style_name(self):
+        return self.style_ps or (self.styles[0] if self.styles else "")
+
+    def swap_family(self, value, nid=None):
+        """Insert the suffix after the family part of a display name."""
+        if self.fam_old:
+            m = split_family(value, self.fam_old)
+            if m:
+                return self.fam_new + m[1]
+        for st in self.styles + ([self.style_ps] if self.style_ps else []):
+            if st and value.endswith(st) and len(value) > len(st):
+                return value[:-len(st)].rstrip(" -_") + self.display + " " + st
+        self.warnings.append("name ID %s: family not found in '%s'; the suffix was "
+                             "appended at the end" % (nid if nid is not None else "?", value))
+        return value + self.display
+
+    def ps_swap(self, value):
+        """PostScript-like names (fvar instances): suffix after the family."""
+        if self.fam_ps and value.startswith(self.fam_ps):
+            rest = value[len(self.fam_ps):].lstrip("-_ ")
+            return self.fam_ps + "-" + self.ps_core + ("-" + rest if rest else "")
+        return None
+
+    def name_record(self, nid, value):
+        if nid in (1, 4, 16, 21):
+            return self.swap_family(value, nid)
+        if nid == 6 and self.ps_new:
+            return self.ps_new
+        if nid == 3:                      # unique ID, usually "version;vendor;PostScript name"
+            if self.ps_old and self.ps_old in value:
+                return value.replace(self.ps_old, self.ps_new)
+            head, sep, tail = value.rpartition(";")
+            swapped = self.ps_swap(tail)
+            if swapped:
+                return head + sep + swapped
+            return value + ";" + self.ps_core
+        if nid == 25:
+            return value + self.ps_core
+        if nid >= 256 and " " not in value:
+            return self.ps_swap(value) or value
+        return value                      # 2, 17 (style / weight) etc.: untouched
 
 
 class Renamer:
     def __init__(self, root, suffix):
-        self.core = suffix.lstrip("-_ ")
-        if not self.core:
-            sys.exit("Suffix must not be empty.")
-        self.hyph = "-" + self.core
-        self.sp = " " + self.core
         recs = list(root.iter("namerecord"))
-
-        def first(nid):
+        names = {}
+        for windows_only in (True, False):          # Windows English first
             for r in recs:
-                if int(r.get("nameID")) == nid and r.text and r.text.strip():
-                    return r.text.strip()
-            return None
+                nid, txt = int(r.get("nameID")), (r.text or "").strip()
+                if not txt or nid in names:
+                    continue
+                if windows_only and (r.get("platformID"), r.get("platEncID"),
+                                     r.get("langID")) != ("3", "1", "0x409"):
+                    continue
+                names[nid] = txt
+        self.plan = NamePlan(names, suffix)
 
-        self.fam_base = first(16) or first(1)
-        self.ps_old = first(6)
-        self.ps_family_old = self.ps_old.partition("-")[0] if self.ps_old else None
-        self.ps_new = self.ps_name(self.ps_old) if self.ps_old else None
+    @property
+    def ps_new(self):
+        return self.plan.ps_new
 
-    def ps_name(self, value):
-        """Insert suffix after the family part:  Font-Regular -> Font-FD-Regular"""
-        return insert_suffix(value, self.core)
-
-    def family(self, value):
-        """Font Light -> Font FD Light"""
-        base = self.fam_base
-        if base and value.startswith(base):
-            return base + self.sp + value[len(base):]
-        return value + self.sp
-
-    def name_record(self, nid, value):
-        if nid in (1, 16, 21, 4):
-            return self.family(value)
-        if nid == 6 and self.ps_new:
-            return self.ps_new
-        if nid == 3:
-            if self.ps_old and self.ps_old in value:
-                return value.replace(self.ps_old, self.ps_new)
-            return value + ";" + self.core
-        if nid == 25:
-            return value + self.core
-        if nid >= 256 and self.ps_family_old and value.startswith(self.ps_family_old):
-            return self.ps_family_old + self.hyph + value[len(self.ps_family_old):]
-        return value
+    @property
+    def warnings(self):
+        return self.plan.warnings
 
     def apply(self, root):
         n = 0
@@ -632,25 +817,41 @@ class Renamer:
                 continue
             nid = int(r.get("nameID"))
             old = r.text.strip()
-            new = self.name_record(nid, old)
+            new = self.plan.name_record(nid, old)
             if new != old:
                 set_text(r, new)
                 n += 1
         # CFF top dict names
         for cff in root.iter("CFFFont"):
-            if cff.get("name"):
-                cff.set("name", self.ps_name(cff.get("name")))
+            if cff.get("name") and self.plan.ps_new:
+                cff.set("name", self.plan.ps_new)
             for tag in ("FullName", "FamilyName"):
                 el = cff.find(tag)
                 if el is not None and el.get("value"):
-                    el.set("value", self.family(el.get("value")))
+                    el.set("value", self.plan.swap_family(el.get("value")))
         return n
+
+
+def planned_stem(path, suffix):
+    """File name (without extension) the converted font will get: its new
+    PostScript name.  Used to detect clashes before converting."""
+    stem = os.path.splitext(os.path.basename(path))[0]
+    try:
+        f = TTFont(path, lazy=True)
+        names = {i: f["name"].getDebugName(i) for i in (1, 3, 4, 6, 16, 17)}
+        f.close()
+        ps = NamePlan(names, suffix).ps_new
+        if ps:
+            return ps
+    except Exception:
+        pass
+    return insert_suffix(stem, suffix)
 
 
 # ----------------------------------------------------------------------------
 def apply_cmap_mode(root, tables, cmap, sources, targets):
     """cmap method: point the cmap entries of the target digits (Latin and,
-    with --arabic, Arabic-Indic) straight at the matching Persian glyphs.
+    with --arabic, Arabic-Indic) straight at the matching Farsi glyphs.
     Nothing else in the font is touched; the old digit glyphs stay unused."""
     glyf = tables.get("glyf")
     glyphs = {g.get("name"): g for g in glyf.findall("TTGlyph")} if glyf is not None else {}
@@ -679,7 +880,7 @@ def apply_cmap_mode(root, tables, cmap, sources, targets):
                 if m.get("name") != new:
                     m.set("name", new)
                     changed += 1
-    print("cmap: %d mappings now point at the Persian glyphs." % changed)
+    print("cmap: %d mappings now point at the Farsi glyphs." % changed)
     if not changed:
         sys.exit("Nothing to do.")
 
@@ -713,24 +914,24 @@ def convert_font(src_path, args, output=None, out_dir=None):
     order = read_glyph_order(root)
     cmap = read_cmap(root)
 
-    # 2) Persian digit glyph -> Latin digit glyph ----------------------------
+    # 2) Farsi digit glyph -> Latin digit glyph ----------------------------
     targets = [("Latin", LATIN_BASE)]
     if args.arabic:
         targets.append(("Arabic-Indic", ARABIC_BASE))
-    print("Source digits: U+%04X..U+%04X (Persian) -> %s" % (
-        PERSIAN_BASE, PERSIAN_BASE + 9, " + ".join(
+    print("Source digits: U+%04X..U+%04X (Farsi) -> %s" % (
+        FARSI_BASE, FARSI_BASE + 9, " + ".join(
             "%s U+%04X..U+%04X" % (n, b, b + 9) for n, b in targets)))
     sources = {}
     for i in range(10):
-        per = cmap.get(PERSIAN_BASE + i)
+        per = cmap.get(FARSI_BASE + i)
         if per is None:
-            sys.exit("Missing cmap entry for U+%04X" % (PERSIAN_BASE + i))
+            sys.exit("Missing cmap entry for U+%04X" % (FARSI_BASE + i))
         sources[i] = per
     if args.cmap:
-        print("Method: cmap (digits point directly at the Persian glyphs)")
+        print("Method: cmap (digits point directly at the Farsi glyphs)")
         apply_cmap_mode(root, tables, cmap, sources, targets)
     else:
-        persian_glyphs = set(sources.values())
+        farsi_glyphs = set(sources.values())
         dst_to_src = {}
         for label, base in targets:
             for i in range(10):
@@ -739,16 +940,16 @@ def convert_font(src_path, args, output=None, out_dir=None):
                     sys.exit("Missing cmap entry for U+%04X (%s digit)" % (base + i, label))
                 if dst == per:
                     print("  note: U+%04X and U+%04X already share glyph '%s'" %
-                          (base + i, PERSIAN_BASE + i, dst))
+                          (base + i, FARSI_BASE + i, dst))
                     continue
-                if dst in persian_glyphs:
-                    print("  note: glyph '%s' (U+%04X) is a Persian digit glyph of another "
+                if dst in farsi_glyphs:
+                    print("  note: glyph '%s' (U+%04X) is a Farsi digit glyph of another "
                           "digit; skipped" % (dst, base + i))
                     continue
                 if dst_to_src.setdefault(dst, per) != per:
                     print("  WARNING: glyph '%s' is shared by digits needing different "
                           "shapes; keeping the first" % dst)
-        # A Persian glyph that is itself just a component of the target glyph has
+        # A Farsi glyph that is itself just a component of the target glyph has
         # the same shape already: nothing to do (and copying would make a loop).
         glyf = tables.get("glyf")
         if glyf is not None:
@@ -816,15 +1017,19 @@ def convert_font(src_path, args, output=None, out_dir=None):
         if "kern" in tables:
             had |= process_kern_table(tables["kern"], dst_to_src, src_to_dsts, order)
         if "GPOS" in tables or "kern" in tables:
-            print("Kerning: Persian digits had kerning -> copied to the target digits."
+            print("Kerning: Farsi digits had kerning -> copied to the target digits."
                   if had else
-                  "Kerning: Persian digits had no kerning -> target digit kerning removed.")
+                  "Kerning: Farsi digits had no kerning -> target digit kerning removed.")
 
     # 4) names -----------------------------------------------------------------
     if args.suffix:
         renamer = Renamer(root, args.suffix)
-        print("Renamed %d name records." % renamer.apply(root))
-        new_stem = renamer.ps_name(stem)
+        n = renamer.apply(root)
+        style = renamer.plan.style_name()
+        print("Renamed %d name records%s." % (n, (" (style / weight name '%s' unchanged)" % style) if style else ""))
+        for w in renamer.warnings:
+            print("  WARNING:", w)
+        new_stem = renamer.ps_new or insert_suffix(stem, args.suffix)
     else:
         new_stem = stem
 
@@ -892,19 +1097,21 @@ def collect_fonts(folder, recursive, exclude=(), exclude_names=()):
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Make the Latin digits (0-9) of a font look like the Persian "
+        description="Make the Latin digits (0-9) of a font look like the Farsi "
                     "digits (U+06F0-06F9), and rename the font with a suffix.")
     ap.add_argument("path", help="a font file (.ttf .otf .woff .woff2 .ttx) or a folder; "
                                  "for a folder every font in it is converted")
     ap.add_argument("-s", "--suffix", required=True,
-                    help="suffix added to the font names, e.g. --suffix=-FD (always "
-                         "required: the new font must not share the name of the old one)")
+                    help="suffix added after the family name, e.g. --suffix=-FD (always "
+                         "required: the new font must not share the name of the old one). "
+                         "Used as typed in the family/full names; the style name is "
+                         "never changed")
     ap.add_argument("-m", "--mode", choices=("component", "copy"),
                     help="how the digits are made: 'component' = Latin glyph references "
-                         "the Persian glyph (sbix: dupe), 'copy' = outlines/bitmaps are "
+                         "the Farsi glyph (sbix: dupe), 'copy' = outlines/bitmaps are "
                          "duplicated (required, except with --cmap)")
     ap.add_argument("--cmap", action="store_true",
-                    help="point the cmap entries of the digits directly at the Persian "
+                    help="point the cmap entries of the digits directly at the Farsi "
                          "glyphs; then --mode is not needed (--suffix still is)")
     ap.add_argument("-o", "--output",
                     help="output font file (single input) or output folder (folder input); "
@@ -923,7 +1130,7 @@ def main():
     ap.add_argument("--keep-ttx", action="store_true",
                     help="keep the modified .ttx next to the output font")
     ap.add_argument("--arabic", action="store_true",
-                    help="also apply the Persian digits to the Arabic-Indic digits "
+                    help="also apply the Farsi digits to the Arabic-Indic digits "
                          "(U+0660-0669), in addition to the Latin digits (off by default)")
     ap.add_argument("--version", action="version", version="Digits2Fa " + __version__)
     args = ap.parse_args()
@@ -991,8 +1198,7 @@ def main():
     single_dir, flat = None, True
     if mode == "single" and len(todo) > 1:
         single_dir = os.path.join(out_root, name)
-        names = [(insert_suffix(os.path.splitext(os.path.basename(f))[0], args.suffix)
-                  + os.path.splitext(f)[1]).lower() for f in todo]
+        names = [(planned_stem(f, args.suffix) + os.path.splitext(f)[1]).lower() for f in todo]
         flat = len(set(names)) == len(names)
         collected.append(single_dir)
         print("Collecting %d fonts into: %s" % (len(todo), single_dir))
