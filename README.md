@@ -225,7 +225,7 @@ fonts/
 
 The collect folders are not searched again on the next run. With `--output ./out` the same structure is created inside `./out`.
 
-In folder mode a failing font is reported and skipped; the others are still converted. Fonts whose name already contains the suffix (e.g. `Font-FD-Regular.ttf`) are skipped so that a second run doesn't convert the results again. Font collections (`.ttc`, `.otc`) are not supported.
+In folder mode a failing font is reported and skipped; the others are still converted. Fonts whose name already contains the suffix (e.g. `Font-FD-Regular.ttf` or `Font-VF-FD[DSTY,KSHD,wght].ttf`; the `[axes]` part is ignored) are skipped so that a second run doesn't convert the results again. Font collections (`.ttc`, `.otc`) are not supported.
 
 ## Launcher scripts (just double-click)
 
@@ -293,6 +293,7 @@ The suffix goes **after the family name and before the style (weight) name**. Th
 - Names are matched ignoring case, spaces, hyphens and underscores (so `AzarMehr DS2` and `AzarMehr-DS2` are the same family).
 - The style names (ID 2 and ID 17) are not touched. If a font already has an odd typographic subfamily (ID 17), it stays as it is; fix it in the original.
 - Mac and Windows name records are treated the same way.
+- **Variable fonts** (fonts with an `fvar` table) get a file name of the form `Base-FD[axes]`. The axis tags are read from the font and sorted (custom axes in capitals first): `AzarMehr-VF[wght,DSTY].ttf` → `AzarMehr-VF-FD[DSTY,KSHD,wght].ttf`. Static fonts keep the naming described above.
 - If the family can't be found in a name, the suffix is put before the style name when possible, otherwise appended at the end, and a warning is printed.
 
 ## Limitations
@@ -313,6 +314,7 @@ The suffix goes **after the family name and before the style (weight) name**. Th
 - The launchers check the dependencies (`fonttools`, `brotli`) first and install only the missing ones; nothing is upgraded. Both are required.
 - Added `requirements.txt`.
 - Naming: the suffix is now inserted after the family name (taken from the name table) and before the style name, which is never changed; used as typed in family/full names (`--suffix=-FD` gives `Family-FD`); the file name is the new PostScript name. Families with hyphens (e.g. `AzarMehr-DS2`) are handled correctly.
+- Variable fonts: the file name becomes `Base-FD[axes]` with the axes taken from the font's `fvar` table (sorted); converted variable fonts (`…-FD[…]`) are skipped in folder runs.
 - The launchers look for a working Python 3 (`python3`, `python`, `py -3`) and ignore the Microsoft Store shortcut that Windows installs as `python3`/`python` when Python isn't really installed. On failure `.sh` and `.bat` keep the window open.
 
 **1.0**

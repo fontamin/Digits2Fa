@@ -832,6 +832,24 @@ class Renamer:
         return n
 
 
+_AXES_RE = re.compile(r"^(?P<base>.*?)(?P<axes>\[[^\]]*\])$")
+
+
+def split_axes(stem):
+    """'AzarMehr-VF[wght,DSTY]' -> ('AzarMehr-VF', '[wght,DSTY]')"""
+    m = _AXES_RE.match(stem)
+    return (m.group("base"), m.group("axes")) if m else (stem, "")
+
+
+def variable_stem(stem, suffix, axis_tags):
+    """File name of a variable font: the suffix goes after the base name and
+    the axis tags come from the font's fvar table, sorted (custom axes in
+    capitals first):   AzarMehr-VF[wght,DSTY] -> AzarMehr-VF-FD[DSTY,KSHD,wght]"""
+    base, _ = split_axes(stem)
+    core = re.sub(r"\s+", "", suffix.strip().lstrip("-_ "))
+    return "%s-%s[%s]" % (base, core, ",".join(sorted(axis_tags)))
+
+
 def planned_stem(path, suffix):
     """File name (without extension) the converted font will get: its new
     PostScript name.  Used to detect clashes before converting."""
@@ -839,7 +857,10 @@ def planned_stem(path, suffix):
     try:
         f = TTFont(path, lazy=True)
         names = {i: f["name"].getDebugName(i) for i in (1, 3, 4, 6, 16, 17)}
+        axes = [a.axisTag for a in f["fvar"].axes] if "fvar" in f else []
         f.close()
+        if axes:
+            return variable_stem(stem, suffix, axes)
         ps = NamePlan(names, suffix).ps_new
         if ps:
             return ps
@@ -1030,6 +1051,11 @@ def convert_font(src_path, args, output=None, out_dir=None):
         for w in renamer.warnings:
             print("  WARNING:", w)
         new_stem = renamer.ps_new or insert_suffix(stem, args.suffix)
+        if "fvar" in tables:                       # variable font: Family-FD[axes]
+            axes = [(a.findtext("AxisTag") or "").strip() for a in tables["fvar"].iter("Axis")]
+            axes = [a for a in axes if a]
+            if axes:
+                new_stem = variable_stem(stem, args.suffix, axes)
     else:
         new_stem = stem
 
@@ -1182,7 +1208,7 @@ def main():
 
     todo, skipped = [], []
     for f in fonts:
-        stem = os.path.splitext(os.path.basename(f))[0]
+        stem = split_axes(os.path.splitext(os.path.basename(f))[0])[0]   # ignore "[wght,...]"
         if core in re.split(r"[-_ ]", stem):
             print("Skipped (already has the suffix): %s" % f)
             skipped.append(f)
