@@ -46,9 +46,7 @@ The launcher scripts (see below) check these dependencies on every run and insta
 ## Quick start
 
 ```bash
-python Digits2Fa.py Font.ttf \
-    --mode component \
-    --suffix=-FD
+python Digits2Fa.py Font.ttf --mode component --suffix=-FD
 ```
 
 This writes `Font-FD.ttf` next to `Font.ttf`. For `Font-Regular.ttf` the result is `Font-FD-Regular.ttf` and the family name `Font` becomes `Font-FD` (see [How the font is renamed](#how-the-font-is-renamed)).
@@ -90,79 +88,41 @@ The input is never overwritten.
 Single file:
 
 ```bash
-python Digits2Fa.py Font.ttf \
-    --mode component \
-    --suffix=-FD
+python Digits2Fa.py Font.ttf --mode component --suffix=-FD
 
-python Digits2Fa.py Font.ttf \
-    --mode copy \
-    --suffix=-FD
+python Digits2Fa.py Font.ttf --mode copy --suffix=-FD
 
-python Digits2Fa.py Font.ttf \
-    --cmap \
-    --suffix=-FD
+python Digits2Fa.py Font.ttf --cmap --suffix=-FD
 ```
 
 Latin **and** Arabic‑Indic digits:
 
 ```bash
-python Digits2Fa.py Font.ttf \
-    --mode component \
-    --suffix=-FD \
-    --arabic
+python Digits2Fa.py Font.ttf --mode component --suffix=-FD --arabic
 
-python Digits2Fa.py Font.ttf \
-    --mode copy \
-    --suffix=-FD \
-    --arabic
+python Digits2Fa.py Font.ttf --mode copy --suffix=-FD --arabic
 
-python Digits2Fa.py Font.ttf \
-    --cmap \
-    --suffix=-FD \
-    --arabic
+python Digits2Fa.py Font.ttf --cmap --suffix=-FD --arabic
 ```
 
 Output path, intermediate TTX:
 
 ```bash
-python Digits2Fa.py Font.ttf \
-    -m component \
-    -s=-FD \
-    -o out/Font-FD.ttf
+python Digits2Fa.py Font.ttf -m component -s=-FD -o out/Font-FD.ttf
 
-python Digits2Fa.py Font.ttf \
-    -m copy \
-    -s=-FD \
-    --keep-ttx
+python Digits2Fa.py Font.ttf -m copy -s=-FD --keep-ttx
 ```
 
 A folder (every `.ttf`, `.otf`, `.woff`, `.woff2` in it; `--collect` is always required for a folder):
 
 ```bash
-python Digits2Fa.py ./fonts \
-    --mode component \
-    --suffix=-FD \
-    --collect none
+python Digits2Fa.py ./fonts --mode component --suffix=-FD --collect none
 
-python Digits2Fa.py ./fonts \
-    --mode copy \
-    --suffix=-FD \
-    -r \
-    --collect none
+python Digits2Fa.py ./fonts --mode copy --suffix=-FD -r --collect none
 
-python Digits2Fa.py ./fonts \
-    --mode component \
-    --suffix=-FD \
-    --arabic \
-    -r \
-    --collect none \
-    -o ./out
+python Digits2Fa.py ./fonts --mode component --suffix=-FD --arabic -r --collect none -o ./out
 
-python Digits2Fa.py ./fonts \
-    --cmap \
-    --suffix=-FD \
-    --collect none \
-    -o ./out
+python Digits2Fa.py ./fonts --cmap --suffix=-FD --collect none -o ./out
 ```
 
 ### Where the results go (folder input)
@@ -176,25 +136,11 @@ python Digits2Fa.py ./fonts \
 | `single` | If more than one font is converted, **all** results of the run are put together in one folder (named by `--collect-folder`) in the input folder. If two fonts would get the same file name, the sub-folder structure is kept inside that folder. |
 
 ```bash
-python Digits2Fa.py ./fonts \
-    -m component \
-    -s=-FD \
-    -r \
-    --collect per-folder \
-    --collect-folder "FD(Farsi Digits)"
+python Digits2Fa.py ./fonts -m component -s=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
 
-python Digits2Fa.py ./fonts \
-    -m component \
-    -s=-FD \
-    -r \
-    --collect single \
-    --collect-folder "FD(Farsi Digits)"
+python Digits2Fa.py ./fonts -m component -s=-FD -r --collect single --collect-folder "FD(Farsi Digits)"
 
-python Digits2Fa.py ./fonts \
-    -m component \
-    -s=-FD \
-    -r \
-    --collect none
+python Digits2Fa.py ./fonts -m component -s=-FD -r --collect none
 ```
 
 Result of `--collect per-folder`:
@@ -232,12 +178,7 @@ In folder mode a failing font is reported and skipped; the others are still conv
 Put the launcher and `Digits2Fa.py` in the folder that contains your fonts and run the launcher. **By default it converts every font in that folder and in all its sub-folders** (`.ttf`, `.otf`, `.woff`, `.woff2`):
 
 ```
-python Digits2Fa.py . \
-    --mode component \
-    --suffix=-FD \
-    -r \
-    --collect per-folder \
-    --collect-folder "FD(Farsi Digits)"
+python Digits2Fa.py . --mode component --suffix=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
 ```
 
 - The suffix is `-FD`.
