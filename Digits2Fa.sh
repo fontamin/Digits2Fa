@@ -2,9 +2,10 @@
 # Digits2Fa 1.1 - macOS / Linux launcher
 # (On Windows use Digits2Fa.bat.)
 # Put this file and Digits2Fa.py in the folder that contains your fonts
-# (the fonts may also be in sub-folders), then run:
-#     chmod +x Digits2Fa.sh      (once)
-#     ./Digits2Fa.sh
+# (the fonts may also be in sub-folders), then run it in a terminal:
+#     bash Digits2Fa.sh
+# (macOS: type "bash ", drag this file into the Terminal window, press Enter.)
+# For ./Digits2Fa.sh make it executable once:  chmod +x Digits2Fa.sh
 # Needs Python 3. The dependencies (fonttools, brotli) are checked on every run
 # and installed if they are missing (see requirements.txt).
 

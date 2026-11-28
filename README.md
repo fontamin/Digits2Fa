@@ -51,8 +51,6 @@ python Digits2Fa.py Font.ttf --mode component --suffix=-FD
 
 This writes `Font-FD.ttf` next to `Font.ttf`. For `Font-Regular.ttf` the result is `Font-FD-Regular.ttf` and the family name `Font` becomes `Font-FD` (see [How the font is renamed](#how-the-font-is-renamed)).
 
-> Long commands are written with one argument per line. On Linux/macOS a trailing `\` continues the command on the next line; in Windows `cmd` use `^` instead (PowerShell: a backtick), or simply put everything on one line.
-
 > Write the suffix as `--suffix=-FD` (with `=`). A suffix that starts with a dash can otherwise be read as an option. A suffix without a dash (`--suffix FD`) also works.
 
 ## Methods
@@ -173,9 +171,9 @@ The collect folders are not searched again on the next run. With `--output ./out
 
 In folder mode a failing font is reported and skipped; the others are still converted. Fonts whose name already contains the suffix (e.g. `Font-FD-Regular.ttf` or `Font-VF-FD[DSTY,KSHD,wght].ttf`; the `[axes]` part is ignored) are skipped so that a second run doesn't convert the results again. Font collections (`.ttc`, `.otc`) are not supported.
 
-## Launcher scripts (just double-click)
+## Launcher scripts
 
-Put the launcher and `Digits2Fa.py` in the folder that contains your fonts and run the launcher. **By default it converts every font in that folder and in all its sub-folders** (`.ttf`, `.otf`, `.woff`, `.woff2`):
+Put the launcher and `Digits2Fa.py` in the folder that contains your fonts and run the launcher (Windows: double-click `Digits2Fa.bat`; macOS / Linux: run `Digits2Fa.sh` in a terminal, see below). **By default it converts every font in that folder and in all its sub-folders** (`.ttf`, `.otf`, `.woff`, `.woff2`):
 
 ```
 python Digits2Fa.py . --mode component --suffix=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
@@ -189,27 +187,21 @@ python Digits2Fa.py . --mode component --suffix=-FD -r --collect per-folder --co
 | File | System |
 |---|---|
 | `Digits2Fa.bat` | Windows (double‑click) |
-| `Digits2Fa.command` | macOS (double‑click, includes a final pause; on the first run you may have to allow it in System Settings → Privacy & Security, see below) |
-| `Digits2Fa.sh` | macOS / Linux (terminal). On Windows use `Digits2Fa.bat` instead. |
+| `Digits2Fa.sh` | macOS / Linux (run in a terminal). On Windows use `Digits2Fa.bat` instead. |
 
 If Python is installed but the launcher says it was not found on Windows, the Microsoft Store shortcut is probably in the way: turn off *Settings → Apps → Advanced app settings → App execution aliases* for `python.exe` / `python3.exe`, or make sure the real Python is in `PATH`.
 
 Each launcher also contains commented examples for a single font, another folder and another file. Edit them to change the mode, suffix, folder name or to add `--arabic`.
 
-### macOS troubleshooting
+### Running `Digits2Fa.sh` on macOS / Linux
 
-- **"could not be executed because you do not have appropriate access privileges":** the file has no execute permission (this happens when a file is downloaded on its own, e.g. via "Raw" or "Save as"). Open Terminal in the folder and run, once:
+On many systems a double-click on `Digits2Fa.sh` simply runs it in a terminal window (on macOS this typically works once the file is executable, see below). If a double-click opens the file in an editor instead, or you prefer the terminal, open Terminal, type `bash ` (with a space after it), drag `Digits2Fa.sh` from Finder into the Terminal window and press Enter. Or, in the folder of the script:
 
-  ```bash
-  chmod +x Digits2Fa.command Digits2Fa.sh
-  ```
+```bash
+bash Digits2Fa.sh
+```
 
-  Or run it without changing anything: `bash Digits2Fa.command`.
-- **"Apple could not verify ... is free of malware":** files from the internet carry a quarantine flag. You can allow the file yourself: after the first blocked attempt open **System Settings → Privacy & Security**, scroll down to the security section and click **Open Anyway** next to `Digits2Fa.command`, then confirm. (On older macOS versions the entry is under System Preferences → Security & Privacy → General.) Alternatively right‑click the file → Open, or run:
-
-  ```bash
-  xattr -d com.apple.quarantine Digits2Fa.command Digits2Fa.sh
-  ```
+This needs no special permissions. For `./Digits2Fa.sh` or a double-click that runs the script, the file has to be executable; make it so once with `chmod +x Digits2Fa.sh` (a file downloaded on its own, e.g. via "Raw", loses this permission). On Windows, `.sh` files are usually opened by Git Bash if Git for Windows is installed; use `Digits2Fa.bat` there instead.
 
 ## How it works
 
@@ -249,7 +241,7 @@ The suffix goes **after the family name and before the style (weight) name**. Th
 ## Changelog
 
 **1.1**
-- The launchers (`.bat`, `.command`, `.sh`) now convert every font in their folder and all sub-folders by default, with suffix `-FD`.
+- The launchers (`.bat`, `.sh`) now convert every font in their folder and all sub-folders by default, with suffix `-FD`.
 - New `--collect per-folder|single|none` argument (required for a folder input, no default) and `--collect-folder NAME`: results next to the originals, in a sub-folder of every folder with more than one font (the launchers use `per-folder` and `FD(Farsi Digits)`, so the folder structure is kept), or all together in one folder.
 - New `--version` argument.
 - The launchers check the dependencies (`fonttools`, `brotli`) first and install only the missing ones; nothing is upgraded. Both are required.
