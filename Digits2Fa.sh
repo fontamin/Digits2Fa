@@ -62,8 +62,10 @@ fi
 #                             none       = just next to the originals
 #   --collect-folder NAME   name of that folder (change it freely; not used with none)
 #   add --arabic to also convert the Arabic-Indic digits
+STATUS=1
 if [ "$DEPS_OK" = 1 ]; then
     $PY Digits2Fa.py . --mode component --suffix=-FD -r --collect per-folder --collect-folder "FD(Farsi Digits)"
+    STATUS=$?
 fi
 
 # ---- Only one font (commented example) --------------------------------------
@@ -73,12 +75,11 @@ fi
 # $PY Digits2Fa.py "/Users/me/Fonts" --mode component --suffix=-FD --arabic -r --collect per-folder --collect-folder "FD(Farsi Digits)"
 # $PY Digits2Fa.py "/Users/me/Fonts/Font.ttf" --mode component --suffix=-FD -o "/Users/me/Fonts/out/Font-FD.ttf"
 
-# ---- On failure keep the window open so the message can be read -------------
-if [ "$DEPS_OK" != 1 ]; then
-    if [ -t 0 ]; then
-        echo
-        read -n 1 -s -r -p "Press any key to close..."
-        echo
-    fi
-    exit 1
+# ---- Keep the window open (double-click) so the output can be read ----------
+# Only in an interactive terminal; delete this block if you don't want the pause.
+if [ -t 0 ]; then
+    echo
+    read -n 1 -s -r -p "Press any key to close..."
+    echo
 fi
+exit $STATUS

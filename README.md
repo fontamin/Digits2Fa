@@ -182,6 +182,7 @@ python Digits2Fa.py . --mode component --suffix=-FD -r --collect per-folder --co
 - The suffix is `-FD`.
 - `--collect per-folder`: in every folder where more than one font is found, the results are put in a sub-folder called `FD(Farsi Digits)` inside that same folder, so the folder structure of your font package stays intact and the converted fonts sit next to the originals. The folder name and the `--collect` choice are only arguments in the launcher; change them there if you like (for example `--collect single` to get everything in one folder). The Python script itself has no defaults for them.
 - A folder with a single font gets the result right beside it.
+- When run in an interactive terminal, `Digits2Fa.sh` ends with "Press any key to close..." so the window stays open after a double-click and you can read the result (delete that block at the end of the file if you don't want it).
 - Before converting, the launcher checks whether `fonttools` and `brotli` are installed and installs only the missing ones with `pip install` (no upgrade). Both are required: if either can't be installed, nothing is converted and a message tells you how to install it yourself.
 
 | File | System |
@@ -195,13 +196,26 @@ Each launcher also contains commented examples for a single font, another folder
 
 ### Running `Digits2Fa.sh` on macOS / Linux
 
-On many systems a double-click on `Digits2Fa.sh` simply runs it in a terminal window (on macOS this typically works once the file is executable, see below). If a double-click opens the file in an editor instead, or you prefer the terminal, open Terminal, type `bash ` (with a space after it), drag `Digits2Fa.sh` from Finder into the Terminal window and press Enter. Or, in the folder of the script:
+**From a terminal** (no special permissions, macOS does not block it): open Terminal, type `bash ` (with a space after it), drag `Digits2Fa.sh` from Finder into the Terminal window and press Enter. Or, in the folder of the script:
 
 ```bash
 bash Digits2Fa.sh
 ```
 
-This needs no special permissions. For `./Digits2Fa.sh` or a double-click that runs the script, the file has to be executable; make it so once with `chmod +x Digits2Fa.sh` (a file downloaded on its own, e.g. via "Raw", loses this permission). On Windows, `.sh` files are usually opened by Git Bash if Git for Windows is installed; use `Digits2Fa.bat` there instead.
+**By double-click** the file must be executable, and macOS (Gatekeeper) checks every script that was downloaded from the internet before it lets Finder run it. This is a macOS rule that a script can't switch off, and without an Apple developer signature it can't be avoided for downloaded files. On a fresh download you will see "Permission denied" (no execute permission) and/or "Apple could not verify ... is free of malware". Fix it once for the whole folder:
+
+```bash
+cd /path/to/the/folder && chmod +x Digits2Fa.sh && xattr -dr com.apple.quarantine .
+```
+
+(`xattr -dr com.apple.quarantine` removes the "downloaded from the internet" flag from the files in the folder, so only do this for files you trust; `Digits2Fa.sh` and `Digits2Fa.py` are plain text and can be read first.) After that a double-click runs the script without any warning. Other ways:
+
+- Clone the repository with `git clone` or GitHub Desktop instead of downloading a ZIP: files obtained this way don't carry the quarantine flag, and the executable permission is kept if it was committed (`git update-index --chmod=+x Digits2Fa.sh`).
+- Allow the file in **System Settings → Privacy & Security → Open Anyway** after the first blocked attempt (needed again for every newly downloaded copy).
+
+Every newly downloaded copy of the files gets the quarantine flag again.
+
+On Windows, `.sh` files are usually opened by Git Bash if Git for Windows is installed; use `Digits2Fa.bat` there instead.
 
 ## How it works
 
